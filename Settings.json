@@ -5,12 +5,24 @@
             "Value":"72"
         },
         {
-            "Key": "PullURL",
-            "Value":"http://localhost:9200/logstash-2015.05.18/_search?pretty=true"
+            "Key": "BaseSearchURL",
+            "Value":"http://localhost:9200/logstash-*/_search?from=0&size=10000&pretty=true"
         },
         {
-            "Key":"OutputFile",
+            "Key": "SizeParam",
+            "Value": "5000"
+        },
+        {
+            "Key": "Pretty",
+            "Value": "true"
+        },
+        {
+            "Key":"OutputFileName",
             "Value":"elasticsearch-output.out"
+        },
+        {
+            "Key": "OutputDirectory",
+            "Value":"..\\"
         }
     ]
 }

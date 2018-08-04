@@ -16,8 +16,12 @@ import (
 // current configuration values to use for this application
 // these settings can be set in the Configuration.json file
 // in the current working directory
-var outputFile string
-var pullURL string
+var outputFileName string
+var baseSearchURL string
+var sizeParam int
+var prettyOutput bool
+
+// I'm not sure if this is really needed since I can put this information into the pull URL.
 var hoursToPull int
 
 // The Configuration is just an array of config items
@@ -41,7 +45,8 @@ func main() {
 
 	// make an http request to the elasticsearch engine
 	//resp, httpErr := http.Get("http://localhost:9200/logstash-2015.05.18/_search?pretty=true")
-	resp, httpErr := http.Get(pullURL)
+	// here is the date range search criteria: http://localhost:9200/logstash-*/_search?q=@timestamp:>=2015-05-19&from=0&size=100&pretty=true
+	resp, httpErr := http.Get(baseSearchURL)
 
 	if httpErr != nil {
 		fmt.Println(httpErr)
@@ -54,19 +59,22 @@ func main() {
 	}
 
 	//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
-	text := compressText(body, outputFile)
-	writeErr := ioutil.WriteFile("./"+outputFile+".gz", text.Bytes(), 0666)
+	text := compressText(body, outputFileName)
+	writeErr := ioutil.WriteFile("./"+outputFileName+".gz", text.Bytes(), 0666)
 
 	if writeErr != nil {
 		fmt.Println(writeErr)
 	}
 }
 
+// This function will open up the Settings.json file and load the values that this program needs out of it.
+//  it ignores keys that are not used and writes a message of those keys
 func pullConfig() {
 	// first, pull the settings.json file from this directory.
 	// if it doesn't exist, panic
 	jsonFile, jsonErr := os.Open("Settings.json")
 
+	// the program cannot proceed unless it gets the settings loaded, if we had an error, panic and quit the program.
 	if jsonErr != nil {
 		fmt.Println(jsonErr)
 		panic("Can't load settings from Settings.json, quiting")
@@ -74,6 +82,7 @@ func pullConfig() {
 
 	defer jsonFile.Close()
 
+	// read all the settings
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	// init the config array
@@ -81,6 +90,8 @@ func pullConfig() {
 
 	// unmarshal the byteArray into the configuration object
 	json.Unmarshal(byteValue, &configs)
+
+	// loop through the configuration and find the keys that we need to use and assign them to the global variables to be used
 
 	for i := 0; i < len(configs.Configs); i++ {
 		var iter = configs.Configs[i]
@@ -93,10 +104,17 @@ func pullConfig() {
 			} else {
 				hoursToPull = temp
 			}
-		case "pullurl":
-			pullURL = iter.Value
-		case "outputfile":
-			outputFile = iter.Value
+		case "basesearchurl":
+			baseSearchURL = iter.Value
+		case "outputfilename":
+			outputFileName = iter.Value
+		case "sizeparam":
+			temp, convErr := strconv.Atoi(iter.Value)
+			if convErr != nil {
+				fmt.Println("SizeParam invalid, expected an integer, actual value: " + iter.Value)
+			} else {
+				sizeParam = temp
+			}
 		default:
 			fmt.Println(iter.Key + " is not a tracked key")
 		}
@@ -104,20 +122,23 @@ func pullConfig() {
 }
 
 func compressText(text []byte, filename string) (buf bytes.Buffer) {
-	//var buf bytes.Buffer
+	// create new gzip writer
 	zw := gzip.NewWriter(&buf)
 
 	// setting the header fields is optional
 	zw.Name = filename + ".gz"
 
+	// write the provided text byte array to the buffer
 	_, err := zw.Write(text)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// close the gzip writer
 	if err := zw.Close(); err != nil {
 		fmt.Println("Error closing gzip")
 		log.Fatal(err)
 	}
+
 	return
 }
