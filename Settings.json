@@ -1,0 +1,16 @@
+{
+    "Configuration": [
+        {
+            "Key": "HoursToPull",
+            "Value":"72"
+        },
+        {
+            "Key": "PullURL",
+            "Value":"http://localhost:9200/logstash-2015.05.18/_search?pretty=true"
+        },
+        {
+            "Key":"OutputFile",
+            "Value":"elasticsearch-output.out"
+        }
+    ]
+}
