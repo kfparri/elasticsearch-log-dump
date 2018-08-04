@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // current configuration values to use for this application
@@ -20,8 +21,6 @@ var outputFileName string
 var baseSearchURL string
 var sizeParam int
 var prettyOutput bool
-
-// I'm not sure if this is really needed since I can put this information into the pull URL.
 var hoursToPull int
 
 // The Configuration is just an array of config items
@@ -42,6 +41,11 @@ type Config struct {
 
 func main() {
 	pullConfig()
+
+	timeToPullFrom := time.Now().Add(time.Hour * -1 * time.Duration(hoursToPull))
+
+	fmt.Print("Pulling values since ")
+	fmt.Println(timeToPullFrom)
 
 	// make an http request to the elasticsearch engine
 	//resp, httpErr := http.Get("http://localhost:9200/logstash-2015.05.18/_search?pretty=true")
