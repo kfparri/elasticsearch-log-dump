@@ -56,13 +56,15 @@ func main() {
 	//resp, httpErr := http.Get("http://localhost:9200/logstash-2015.05.18/_search?pretty=true")
 	// here is the date range search criteria: http://localhost:9200/logstash-*/_search?q=@timestamp:>=2015-05-19&from=0&size=100&pretty=true
 	//http://localhost:9200/logstash-*/_search?from=0&size=10000&pretty=true
-	resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
+	//resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
+
+	resp := requestElasticData(dateVal, "0", strconv.Itoa(sizeParam), strconv.FormatBool(prettyOutput))
 
 	//fmt.Println(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
 
-	if httpErr != nil {
-		fmt.Println(httpErr)
-	}
+	// if httpErr != nil {
+	// 	fmt.Println(httpErr)
+	// }
 
 	defer resp.Body.Close()
 
@@ -78,6 +80,16 @@ func main() {
 	if writeErr != nil {
 		fmt.Println(writeErr)
 	}
+}
+
+func requestElasticData(dateString string, from string, size string, pretty string) (resp *http.Response) {
+	resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateString + "&from=" + from + "&size=" + size + "&pretty=" + pretty)
+
+	if httpErr != nil {
+		fmt.Println(httpErr)
+	}
+
+	return
 }
 
 // This function will open up the Settings.json file and load the values that this program needs out of it.
