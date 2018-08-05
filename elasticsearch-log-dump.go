@@ -23,6 +23,7 @@ var sizeParam int
 var prettyOutput bool
 var outputFileName string
 var outputDirectory string
+var totalHits int64
 
 // The Configuration is just an array of config items
 type Configuration struct {
@@ -38,6 +39,16 @@ type Configuration struct {
 type Config struct {
 	Key   string `json:"Key"`
 	Value string `json:"Value"`
+}
+
+// Hits structure holds the hits structure
+type Hits struct {
+	Hits Total `json:"hits"`
+}
+
+// Total holds the total number of hits from this query
+type Total struct {
+	Total int64 `json:"total"`
 }
 
 func main() {
@@ -72,6 +83,12 @@ func main() {
 	if readAllErr != nil {
 		fmt.Println(readAllErr)
 	}
+
+	var hits Hits
+	json.Unmarshal(body, &hits)
+
+	fmt.Print("Hits: ")
+	fmt.Println(hits.Hits.Total)
 
 	//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
 	text := compressText(body, outputFileName)
