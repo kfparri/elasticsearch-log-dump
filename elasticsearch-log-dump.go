@@ -23,7 +23,8 @@ var sizeParam int
 var prettyOutput bool
 var outputFileName string
 var outputDirectory string
-var totalHits int64
+var totalHits int
+var fromPosition int
 
 // The Configuration is just an array of config items
 type Configuration struct {
@@ -48,7 +49,7 @@ type Hits struct {
 
 // Total holds the total number of hits from this query
 type Total struct {
-	Total int64 `json:"total"`
+	Total int `json:"total"`
 }
 
 func main() {
@@ -69,38 +70,48 @@ func main() {
 	//http://localhost:9200/logstash-*/_search?from=0&size=10000&pretty=true
 	//resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
 
-	resp := requestElasticData(dateVal, "0", strconv.Itoa(sizeParam), strconv.FormatBool(prettyOutput))
+	fileCounter := 0
 
-	//fmt.Println(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
+	for fromPosition := 0; fromPosition <= totalHits; fromPosition += sizeParam {
+		resp := requestElasticData(dateVal, strconv.Itoa(fromPosition), strconv.Itoa(sizeParam), strconv.FormatBool(prettyOutput))
 
-	// if httpErr != nil {
-	// 	fmt.Println(httpErr)
-	// }
+		//fmt.Println(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
 
-	defer resp.Body.Close()
+		// if httpErr != nil {
+		// 	fmt.Println(httpErr)
+		// }
 
-	body, readAllErr := ioutil.ReadAll(resp.Body)
-	if readAllErr != nil {
-		fmt.Println(readAllErr)
-	}
+		defer resp.Body.Close()
 
-	var hits Hits
-	json.Unmarshal(body, &hits)
+		body, readAllErr := ioutil.ReadAll(resp.Body)
+		if readAllErr != nil {
+			fmt.Println(readAllErr)
+		}
 
-	fmt.Print("Hits: ")
-	fmt.Println(hits.Hits.Total)
+		var hits Hits
+		json.Unmarshal(body, &hits)
 
-	//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
-	text := compressText(body, outputFileName)
-	writeErr := ioutil.WriteFile("./"+outputFileName+".gz", text.Bytes(), 0666)
+		fmt.Print("Hits: ")
+		fmt.Println(hits.Hits.Total)
 
-	if writeErr != nil {
-		fmt.Println(writeErr)
+		totalHits = hits.Hits.Total
+		//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
+		text := compressText(body, outputFileName)
+		writeErr := ioutil.WriteFile("./"+outputFileName+"_"+strconv.Itoa(fileCounter)+".gz", text.Bytes(), 0666)
+
+		if writeErr != nil {
+			fmt.Println(writeErr)
+		}
+
+		fileCounter++
 	}
 }
 
 func requestElasticData(dateString string, from string, size string, pretty string) (resp *http.Response) {
-	resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateString + "&from=" + from + "&size=" + size + "&pretty=" + pretty)
+	req := baseSearchURL + "/?q=@timestamp:>=" + dateString + "&from=" + from + "&size=" + size + "&pretty=" + pretty
+	fmt.Println(req)
+
+	resp, httpErr := http.Get(req)
 
 	if httpErr != nil {
 		fmt.Println(httpErr)
