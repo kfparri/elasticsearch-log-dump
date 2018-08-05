@@ -17,11 +17,12 @@ import (
 // current configuration values to use for this application
 // these settings can be set in the Configuration.json file
 // in the current working directory
-var outputFileName string
+var hoursToPull int
 var baseSearchURL string
 var sizeParam int
 var prettyOutput bool
-var hoursToPull int
+var outputFileName string
+var outputDirectory string
 
 // The Configuration is just an array of config items
 type Configuration struct {
@@ -42,19 +43,27 @@ type Config struct {
 func main() {
 	pullConfig()
 
-	timeToPullFrom := time.Now().Add(time.Hour * -1 * time.Duration(hoursToPull))
+	// this is used to test against my local dataset (elastic sample data set)
+	timeToPullFrom := time.Date(2015, 5, 20, 12, 0, 0, 0, time.Local)
+	//timeToPullFrom := time.Now().Add(time.Hour * -1 * time.Duration(hoursToPull))
 
 	fmt.Print("Pulling values since ")
 	fmt.Println(timeToPullFrom)
 
+	dateVal := strconv.Itoa(timeToPullFrom.Year()) + "-" + strconv.Itoa(int(timeToPullFrom.Month())) + "-" + strconv.Itoa(timeToPullFrom.Day())
+
 	// make an http request to the elasticsearch engine
 	//resp, httpErr := http.Get("http://localhost:9200/logstash-2015.05.18/_search?pretty=true")
 	// here is the date range search criteria: http://localhost:9200/logstash-*/_search?q=@timestamp:>=2015-05-19&from=0&size=100&pretty=true
-	resp, httpErr := http.Get(baseSearchURL)
+	//http://localhost:9200/logstash-*/_search?from=0&size=10000&pretty=true
+	resp, httpErr := http.Get(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
+
+	//fmt.Println(baseSearchURL + "/?q=@timestamp:>=" + dateVal + "&from=0&size=" + strconv.Itoa(sizeParam) + "&pretty=" + strconv.FormatBool(prettyOutput))
 
 	if httpErr != nil {
 		fmt.Println(httpErr)
 	}
+
 	defer resp.Body.Close()
 
 	body, readAllErr := ioutil.ReadAll(resp.Body)
@@ -112,6 +121,15 @@ func pullConfig() {
 			baseSearchURL = iter.Value
 		case "outputfilename":
 			outputFileName = iter.Value
+		case "outputdirectory":
+			outputDirectory = iter.Value
+		case "pretty":
+			temp, convErr := strconv.ParseBool(iter.Value)
+			if convErr != nil {
+				fmt.Println("Expected boolean value for Pretty, actually received: " + iter.Value)
+			} else {
+				prettyOutput = temp
+			}
 		case "sizeparam":
 			temp, convErr := strconv.Atoi(iter.Value)
 			if convErr != nil {
