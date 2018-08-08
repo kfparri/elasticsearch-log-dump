@@ -25,6 +25,7 @@ var outputFileName string
 var outputDirectory string
 var totalHits int
 var fromPosition int
+var outputFiles []string
 
 // The Configuration is just an array of config items
 type Configuration struct {
@@ -101,13 +102,26 @@ func main() {
 
 		//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
 		text := compressText(body, outputFileName)
-		writeErr := ioutil.WriteFile("./"+outputFileName+"_"+strconv.Itoa(fileCounter)+".gz", text.Bytes(), 0666)
+		tempFileName := "./" + outputFileName + "_" + strconv.Itoa(fileCounter) + ".gz"
+
+		writeErr := ioutil.WriteFile(tempFileName, text.Bytes(), 0666)
 
 		if writeErr != nil {
 			fmt.Println(writeErr)
 		}
 
+		outputFiles = append(outputFiles, tempFileName)
+
 		fileCounter++
+	}
+
+	// We have generated the files, move them to the output directory.
+	for _, file := range outputFiles {
+		err := os.Rename(file, outputDirectory+file)
+
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
