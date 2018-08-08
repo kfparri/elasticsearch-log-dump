@@ -95,6 +95,10 @@ func main() {
 		fmt.Println(hits.Hits.Total)
 
 		totalHits = hits.Hits.Total
+		if totalHits > 10000 {
+			totalHits = 9999
+		}
+
 		//writeErr := ioutil.WriteFile("./"+outputFile, body, 0666)
 		text := compressText(body, outputFileName)
 		writeErr := ioutil.WriteFile("./"+outputFileName+"_"+strconv.Itoa(fileCounter)+".gz", text.Bytes(), 0666)
