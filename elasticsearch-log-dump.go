@@ -57,13 +57,13 @@ func main() {
 	pullConfig()
 
 	// this is used to test against my local dataset (elastic sample data set)
-	timeToPullFrom := time.Date(2015, 5, 20, 12, 0, 0, 0, time.Local)
+	timeToPullFrom := time.Date(2015, 5, 19, 12, 0, 0, 0, time.Local)
 	//timeToPullFrom := time.Now().Add(time.Hour * -1 * time.Duration(hoursToPull))
 
 	fmt.Print("Pulling values since ")
 	fmt.Println(timeToPullFrom)
 
-	dateVal := strconv.Itoa(timeToPullFrom.Year()) + "-" + strconv.Itoa(int(timeToPullFrom.Month())) + "-" + strconv.Itoa(timeToPullFrom.Day())
+	dateVal := strconv.Itoa(timeToPullFrom.Year()) + "-" + leftPad(strconv.Itoa(int(timeToPullFrom.Month())), "0", 2) + "-" + leftPad(strconv.Itoa(timeToPullFrom.Day()), "0", 2)
 
 	// make an http request to the elasticsearch engine
 	//resp, httpErr := http.Get("http://localhost:9200/logstash-2015.05.18/_search?pretty=true")
@@ -126,7 +126,7 @@ func main() {
 }
 
 func requestElasticData(dateString string, from string, size string, pretty string) (resp *http.Response) {
-	req := baseSearchURL + "/?q=@timestamp:>=" + dateString + "&from=" + from + "&size=" + size + "&pretty=" + pretty
+	req := baseSearchURL + "?q=@timestamp:>=" + dateString + "&from=" + from + "&size=" + size + "&pretty=" + pretty
 	fmt.Println(req)
 
 	resp, httpErr := http.Get(req)
@@ -221,4 +221,12 @@ func compressText(text []byte, filename string) (buf bytes.Buffer) {
 	}
 
 	return
+}
+
+// leftPad: pad a string with the provided value
+func leftPad(s string, pad string, plength int) string {
+	for i := len(s); i < plength; i++ {
+		s = pad + s
+	}
+	return s
 }

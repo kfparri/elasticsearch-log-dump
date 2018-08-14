@@ -6,7 +6,7 @@
         },
         {
             "Key": "BaseSearchURL",
-            "Value":"http://localhost:9200/logstash-*/_search?from=0&size=10000&pretty=true"
+            "Value":"http://localhost:9200/logstash-*/_search"
         },
         {
             "Key": "SizeParam",
